@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinMentor AI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+    --border:#30363d;--border2:#484f58;
+    --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+    --gold:#f0b429;--gold2:#ffdf8d;--gold-dim:#3d2e00;
+    --green:#3fb950;--green-bg:#0d1117;
+    --blue:#58a6ff;--blue-bg:#0d1c2e;
+    --red:#f85149;--red-bg:#2d0d0d;
+    --radius:12px;--radius-sm:8px;
+    --shadow:0 8px 32px rgba(0,0,0,0.4);
+  }
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+  
+  /* HEADER */
+  .header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--gold),#ff8c00);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .logo-text{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);letter-spacing:-0.3px}
+  .logo-badge{font-size:10px;background:var(--gold-dim);color:var(--gold);padding:2px 8px;border-radius:20px;font-weight:600;letter-spacing:0.5px}
+  .header-actions{display:flex;align-items:center;gap:12px}
+  .api-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* LAYOUT */
+  .app{display:grid;grid-template-columns:320px 1fr;flex:1;height:calc(100vh - 60px)}
+  
+  /* SIDEBAR */
+  .sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+  .sidebar-section{padding:16px}
+  .sidebar-label{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px}
+  
+  /* PROFILE FORM */
+  .profile-form{overflow-y:auto;flex:1;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .form-group{display:flex;flex-direction:column;gap:4px}
+  .form-label{font-size:12px;color:var(--text2);font-weight:500}
+  .form-input{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+  .form-input:focus{border-color:var(--gold)}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .form-select{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer}
+  
+  .btn-primary{background:linear-gradient(135deg,var(--gold),#ff8c00);color:#1a0a00;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;border:none;border-radius:var(--radius-sm);padding:10px 20px;cursor:pointer;transition:opacity .2s,transform .1s;width:100%}
+  .btn-primary:hover{opacity:.9}
+  .btn-primary:active{transform:scale(.98)}
+  .btn-secondary{background:var(--bg3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 16px;cursor:pointer;transition:all .2s;width:100%}
+  .btn-secondary:hover{border-color:var(--border2);color:var(--text)}
+
+  .session-info{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:12px}
+  .session-id{color:var(--gold);font-family:monospace;font-size:11px}
+  
+  /* MAIN CHAT AREA */
+  .main{display:flex;flex-direction:column;background:var(--bg)}
+  
+  /* TABS */
+  .tabs{display:flex;border-bottom:1px solid var(--border);padding:0 24px;background:var(--bg2)}
+  .tab{padding:14px 16px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+  .tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+  .tab:hover:not(.active){color:var(--text)}
+
+  /* CHAT */
+  .chat-area{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+  
+  .welcome-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;text-align:center;max-width:500px;margin:auto}
+  .welcome-icon{font-size:40px;margin-bottom:12px}
+  .welcome-title{font-family:'DM Serif Display',serif;font-size:24px;color:var(--text);margin-bottom:8px}
+  .welcome-sub{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+  .quick-prompts{display:flex;flex-direction:column;gap:8px;text-align:left}
+  .quick-prompt{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px}
+  .quick-prompt:hover{border-color:var(--gold);color:var(--text);background:var(--gold-dim)}
+  .qp-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+
+  /* MESSAGES */
+  .msg{display:flex;gap:10px;max-width:100%;animation:fadeIn .3s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .msg-avatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-top:2px}
+  .msg-user .msg-avatar{background:var(--blue-bg);color:var(--blue);border:1px solid #1a3a5c}
+  .msg-ai .msg-avatar{background:linear-gradient(135deg,var(--gold),#ff8c00);color:#1a0a00}
+  .msg-body{flex:1;min-width:0}
+  .msg-name{font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:500}
+  .msg-text{font-size:14px;line-height:1.7;color:var(--text)}
+  .msg-user .msg-text{color:var(--text2)}
+
+  /* TOOL CHIPS */
+  .tool-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .tool-chip{background:var(--gold-dim);color:var(--gold);font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+
+  /* KEY NUMBERS CARDS */
+  .key-numbers{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
+  .kn-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px}
+  .kn-label{font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:500}
+  .kn-value{font-size:18px;font-weight:600;color:var(--gold)}
+  .kn-unit{font-size:11px;color:var(--text3);margin-top:2px}
+
+  /* HEALTH SCORE */
+  .health-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:12px}
+  .health-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .health-title{font-size:13px;font-weight:600;color:var(--text2)}
+  .health-score-badge{font-size:22px;font-weight:700;color:var(--gold)}
+  .health-dims{display:flex;flex-direction:column;gap:8px}
+  .health-dim{display:flex;align-items:center;gap:10px}
+  .dim-label{font-size:12px;color:var(--text2);width:160px;flex-shrink:0}
+  .dim-bar-bg{flex:1;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+  .dim-bar{height:100%;border-radius:3px;transition:width .6s ease}
+  .dim-score{font-size:12px;color:var(--text3);width:30px;text-align:right}
+
+  /* TYPING INDICATOR */
+  .typing{display:flex;gap:4px;align-items:center;padding:4px 0}
+  .typing span{width:7px;height:7px;background:var(--text3);border-radius:50%;animation:bounce .9s infinite}
+  .typing span:nth-child(2){animation-delay:.15s}
+  .typing span:nth-child(3){animation-delay:.3s}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+  /* INPUT AREA */
+  .input-area{padding:16px 24px;border-top:1px solid var(--border);background:var(--bg2)}
+  .input-row{display:flex;gap:10px;align-items:flex-end}
+  .msg-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;resize:none;transition:border-color .2s;min-height:42px;max-height:120px}
+  .msg-input:focus{border-color:var(--gold)}
+  .send-btn{background:linear-gradient(135deg,var(--gold),#ff8c00);color:#1a0a00;border:none;border-radius:var(--radius-sm);width:42px;height:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:opacity .2s;flex-shrink:0}
+  .send-btn:hover{opacity:.85}
+  .send-btn:disabled{opacity:.4;cursor:not-allowed}
+  .input-hint{font-size:11px;color:var(--text3);margin-top:6px}
+
+  /* LIFE EVENT PANEL */
+  .panel{display:none;padding:24px;flex:1;overflow-y:auto}
+  .panel.active{display:block}
+  .panel-title{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin-bottom:6px}
+  .panel-sub{font-size:14px;color:var(--text2);margin-bottom:24px}
+  .event-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+  .event-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .2s;text-align:center}
+  .event-card:hover{border-color:var(--gold);background:var(--gold-dim)}
+  .event-card.selected{border-color:var(--gold);background:var(--gold-dim)}
+  .event-emoji{font-size:28px;margin-bottom:8px}
+  .event-name{font-size:13px;font-weight:600;color:var(--text)}
+  .event-desc{font-size:11px;color:var(--text2);margin-top:4px}
+
+  /* METRICS PANEL */
+  .metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}
+  .metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+  .metric-label{font-size:12px;color:var(--text3);margin-bottom:6px;font-weight:500}
+  .metric-value{font-size:24px;font-weight:600;color:var(--text)}
+  .metric-sub{font-size:12px;color:var(--text2);margin-top:4px}
+
+  /* ERROR / SUCCESS */
+  .alert{border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-top:8px}
+  .alert-error{background:var(--red-bg);border:1px solid var(--red);color:var(--red)}
+  .alert-success{background:#0d2010;border:1px solid var(--green);color:var(--green)}
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+  /* CHAT PANEL */
+  .chat-panel{display:flex;flex-direction:column;height:100%}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">₹</div>
+    <span class="logo-text">FinMentor</span>
+    <span class="logo-badge">AI BETA</span>
+  </div>
+  <div class="header-actions">
+    <div class="api-status">
+      <div class="status-dot" id="statusDot" style="background:var(--text3)"></div>
+      <span id="statusText">Not connected</span>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section" style="border-bottom:1px solid var(--border);padding-bottom:12px">
+      <div class="sidebar-label">Your Profile</div>
+      <div id="sessionInfo" style="display:none" class="session-info">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Session active</div>
+        <div class="session-id" id="sessionIdDisplay"></div>
+      </div>
+    </div>
+    
+    <div class="profile-form" id="profileForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Age</label>
+          <input class="form-input" type="number" id="age" value="30" min="18" max="80">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Retirement Age</label>
+          <input class="form-input" type="number" id="retAge" value="60" min="40">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Monthly Income (₹)</label>
+        <input class="form-input" type="number" id="income" value="100000" placeholder="e.g. 100000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Monthly Expenses (₹)</label>
+        <input class="form-input" type="number" id="expense" value="50000" placeholder="e.g. 50000">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Risk Profile</label>
+          <select class="form-select" id="riskProfile">
+            <option value="conservative">Conservative</option>
+            <option value="moderate" selected>Moderate</option>
+            <option value="aggressive">Aggressive</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">City</label>
+          <select class="form-select" id="city">
+            <option value="metro" selected>Metro</option>
+            <option value="tier2">Tier 2</option>
+            <option value="tier3">Tier 3</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Emergency Fund (₹)</label>
+        <input class="form-input" type="number" id="efund" value="150000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Current Monthly SIP (₹)</label>
+        <input class="form-input" type="number" id="sip" value="10000">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">80C Used (₹)</label>
+          <input class="form-input" type="number" id="c80" value="80000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Home Loan EMI (₹)</label>
+          <input class="form-input" type="number" id="emi" value="15000">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Equity MF (₹)</label>
+          <input class="form-input" type="number" id="eqMf" value="500000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">EPF (₹)</label>
+          <input class="form-input" type="number" id="epf" value="200000">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+        <input type="checkbox" id="hasTerm" checked>
+        <label for="hasTerm" class="form-label" style="cursor:pointer">Has Term Insurance (₹1Cr)</label>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="checkbox" id="hasHealth" checked>
+        <label for="hasHealth" class="form-label" style="cursor:pointer">Has Health Insurance (₹5L)</label>
+      </div>
+      <button class="btn-primary" onclick="startSession()">🚀 Start Session</button>
+      <button class="btn-secondary" id="onboardBtn" onclick="runOnboarding()" style="display:none">✨ Run Full Onboarding</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('chat', this)">💬 Chat</div>
+      <div class="tab" onclick="switchTab('life', this)">🎯 Life Events</div>
+      <div class="tab" onclick="switchTab('metrics', this)">📊 Metrics</div>
+    </div>
+
+    <!-- CHAT TAB -->
+    <div id="tab-chat" class="chat-panel">
+      <div class="chat-area" id="chatArea">
+        <div class="welcome-card" id="welcomeCard">
+          <div class="welcome-icon">🧠</div>
+          <div class="welcome-title">Your AI Finance Mentor</div>
+          <div class="welcome-sub">Fill in your profile on the left and start a session. Ask me anything about your finances — SIP planning, FIRE, tax savings, and more.</div>
+          <div class="quick-prompts">
+            <div class="quick-prompt" onclick="sendQuickPrompt(this)">
+              <div class="qp-icon" style="background:#2d1e00;color:var(--gold)">₹</div>
+              What is my Money Health Score?
+            </div>
+            <div class="quick-prompt" onclick="sendQuickPrompt(this)">
+              <div class="qp-icon" style="background:#0d2010;color:var(--green)">🔥</div>
+              How much SIP to retire early at 50?
+            </div>
+            <div class="quick-prompt" onclick="sendQuickPrompt(this)">
+              <div class="qp-icon" style="background:#0d1c2e;color:var(--blue)">🧾</div>
+              How can I save more tax this year?
+            </div>
+            <div class="quick-prompt" onclick="sendQuickPrompt(this)">
+              <div class="qp-icon" style="background:#2d0d0d;color:var(--red)">📈</div>
+              Review my portfolio allocation
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="input-area">
+        <div class="input-row">
+          <textarea class="msg-input" id="msgInput" placeholder="Ask about your finances... (Shift+Enter for new line)" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled title="Start a session first">➤</button>
+        </div>
+        <div class="input-hint" id="inputHint">Start a session first to chat with your FinMentor AI</div>
+      </div>
+    </div>
+
+    <!-- LIFE EVENTS TAB -->
+    <div id="tab-life" class="panel">
+      <div class="panel-title">Life Event Advisor</div>
+      <div class="panel-sub">Select a life event and FinMentor AI will restructure your financial plan accordingly.</div>
+      <div class="event-grid" id="eventGrid">
+        <div class="event-card" onclick="selectEvent('bonus', this)">
+          <div class="event-emoji">💰</div>
+          <div class="event-name">Bonus Received</div>
+          <div class="event-desc">Optimal allocation advice</div>
+        </div>
+        <div class="event-card" onclick="selectEvent('salary_hike', this)">
+          <div class="event-emoji">📈</div>
+          <div class="event-name">Salary Hike</div>
+          <div class="event-desc">Update SIP & savings rate</div>
+        </div>
+        <div class="event-card" onclick="selectEvent('marriage', this)">
+          <div class="event-emoji">💍</div>
+          <div class="event-name">Marriage</div>
+          <div class="event-desc">Joint financial planning</div>
+        </div>
+        <div class="event-card" onclick="selectEvent('new_baby', this)">
+          <div class="event-emoji">👶</div>
+          <div class="event-name">New Baby</div>
+          <div class="event-desc">Education fund & cover</div>
+        </div>
+        <div class="event-card" onclick="selectEvent('home_purchase', this)">
+          <div class="event-emoji">🏠</div>
+          <div class="event-name">Home Purchase</div>
+          <div class="event-desc">EMI vs investment balance</div>
+        </div>
+        <div class="event-card" onclick="selectEvent('inheritance', this)">
+          <div class="event-emoji">🏛️</div>
+          <div class="event-name">Inheritance</div>
+          <div class="event-desc">Lump sum deployment plan</div>
+        </div>
+        <div class="event-card" onclick="selectEvent('job_loss', this)">
+          <div class="event-emoji">⚠️</div>
+          <div class="event-name">Job Loss</div>
+          <div class="event-desc">Emergency & survival plan</div>
+        </div>
+        <div class="event-card" onclick="selectEvent('medical_expense', this)">
+          <div class="event-emoji">🏥</div>
+          <div class="event-name">Medical Expense</div>
+          <div class="event-desc">Recovery & rebuilding plan</div>
+        </div>
+      </div>
+      <div id="eventForm" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:480px">
+        <div id="eventFormTitle" style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:14px"></div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-label" id="amountLabel">Amount (₹)</label>
+          <input class="form-input" type="number" id="eventAmount" placeholder="e.g. 500000">
+        </div>
+        <div class="form-group" style="margin-bottom:16px">
+          <label class="form-label">Custom message (optional)</label>
+          <input class="form-input" type="text" id="eventMsg" placeholder="Any specific question about this event?">
+        </div>
+        <button class="btn-primary" onclick="submitLifeEvent()" style="max-width:200px">Get Advice →</button>
+      </div>
+      <div id="lifeResult" style="margin-top:20px"></div>
+    </div>
+
+    <!-- METRICS TAB -->
+    <div id="tab-metrics" class="panel">
+      <div class="panel-title">System Metrics</div>
+      <div class="panel-sub">Live performance data from your FinMentor AI backend.</div>
+      <div class="metrics-grid" id="metricsGrid">
+        <div class="metric-card">
+          <div class="metric-label">API Status</div>
+          <div class="metric-value" id="m-status" style="font-size:16px;color:var(--text3)">Not checked</div>
+        </div>
+      </div>
+      <button class="btn-secondary" onclick="loadMetrics()" style="max-width:200px;margin-bottom:16px">↻ Refresh Metrics</button>
+      <div id="metricsRaw" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;font-family:monospace;font-size:12px;color:var(--text2);white-space:pre-wrap;max-height:400px;overflow-y:auto;display:none"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+const API = 'http://localhost:8080';
+let sessionId = null;
+let isTyping = false;
+let selectedEvent = null;
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('[id^="tab-"]').forEach(p => {
+    p.style.display = 'none';
+    p.classList.remove('active');
+  });
+  const panel = document.getElementById('tab-' + name);
+  if (name === 'chat') {
+    panel.style.display = 'flex';
+  } else {
+    panel.style.display = 'block';
+    panel.classList.add('active');
+  }
+  if (name === 'metrics') loadMetrics();
+}
+
+document.getElementById('tab-chat').style.display = 'flex';
+
+async function startSession() {
+  const btn = document.querySelector('.btn-primary');
+  btn.textContent = '⏳ Creating session...';
+  btn.disabled = true;
+
+  const body = {
+    age: parseInt(document.getElementById('age').value),
+    monthly_income: parseFloat(document.getElementById('income').value),
+    monthly_expense: parseFloat(document.getElementById('expense').value),
+    retirement_age: parseInt(document.getElementById('retAge').value),
+    risk_profile: document.getElementById('riskProfile').value,
+    city_tier: document.getElementById('city').value,
+    emergency_fund_amount: parseFloat(document.getElementById('efund').value),
+    existing_monthly_sip: parseFloat(document.getElementById('sip').value),
+    section_80c_used: parseFloat(document.getElementById('c80').value),
+    insurance: {
+      has_term_insurance: document.getElementById('hasTerm').checked,
+      term_cover_amount: document.getElementById('hasTerm').checked ? 10000000 : 0,
+      has_health_insurance: document.getElementById('hasHealth').checked,
+      health_cover_amount: document.getElementById('hasHealth').checked ? 500000 : 0
+    },
+    debts: { home_loan_emi: parseFloat(document.getElementById('emi').value) },
+    portfolio: {
+      equity_mf: parseFloat(document.getElementById('eqMf').value),
+      epf: parseFloat(document.getElementById('epf').value)
+    }
+  };
+
+  try {
+    const res = await fetch(`${API}/sessions`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    sessionId = data.session_id;
+
+    document.getElementById('sessionInfo').style.display = 'block';
+    document.getElementById('sessionIdDisplay').textContent = sessionId;
+    document.getElementById('statusDot').style.background = 'var(--green)';
+    document.getElementById('statusText').textContent = 'Session active';
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('inputHint').textContent = 'Press Enter to send, Shift+Enter for new line';
+    document.getElementById('onboardBtn').style.display = 'block';
+    btn.textContent = '✓ Session Active — Update Profile';
+    btn.disabled = false;
+
+    addSystemMsg('Session started! Ask me anything about your finances. Try "What is my Money Health Score?" to begin.');
+  } catch(e) {
+    btn.textContent = '🚀 Start Session';
+    btn.disabled = false;
+    addSystemMsg(`❌ Could not connect to backend: ${e.message}. Make sure your server is running at ${API}`, true);
+    document.getElementById('statusDot').style.background = 'var(--red)';
+    document.getElementById('statusText').textContent = 'Connection failed';
+  }
+}
+
+async function runOnboarding() {
+  if (!sessionId) return;
+  const btn = document.getElementById('onboardBtn');
+  btn.textContent = '⏳ Running onboarding...';
+  btn.disabled = true;
+
+  addAIMsg('Running your personalised 3-step onboarding: Health Score → FIRE Check → Tax Analysis...', [], {});
+
+  try {
+    const res = await fetch(`${API}/sessions/${sessionId}/onboard`, { method: 'POST' });
+    if (res.status === 404) {
+      const recovered = await recreateSession();
+      if (recovered) { runOnboarding(); }
+      return;
+    }
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    data.steps.forEach((step, i) => {
+      if (step.success) {
+        setTimeout(() => {
+          addAIMsg(step.answer, step.tools_used, {});
+        }, i * 300);
+      }
+    });
+
+    const s = data.summary;
+    setTimeout(() => {
+      const kn = {};
+      if (s.health_score) kn['Health Score'] = { val: s.health_score.toFixed(0) + '/100', unit: '' };
+      if (s.recommended_sip_inr) kn['Monthly SIP'] = { val: '₹' + fmt(s.recommended_sip_inr), unit: 'recommended' };
+      if (s.fire_corpus_inr) kn['FIRE Target'] = { val: '₹' + fmtCr(s.fire_corpus_inr), unit: 'corpus needed' };
+      if (s.tax_saving_inr) kn['Tax Saving'] = { val: '₹' + fmt(s.tax_saving_inr), unit: 'by switching regime' };
+      if (Object.keys(kn).length) addKeyNumbers(kn);
+    }, data.steps.length * 300 + 200);
+
+  } catch(e) {
+    addSystemMsg(`Onboarding error: ${e.message}`, true);
+  }
+  btn.textContent = '✨ Run Full Onboarding';
+  btn.disabled = false;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const msg = input.value.trim();
+  if (!msg || !sessionId || isTyping) return;
+
+  input.value = '';
+  autoResize(input);
+  addUserMsg(msg);
+  showTyping();
+
+  try {
+    const res = await fetch(`${API}/sessions/${sessionId}/chat`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msg })
+    });
+
+    // ── AUTO-RECOVER: if session expired, recreate it silently ──
+    if (res.status === 404) {
+      hideTyping();
+      addSystemMsg('Session expired. Reconnecting automatically...');
+      const recovered = await recreateSession();
+      if (recovered) {
+        // Retry the same message with the new session
+        document.getElementById('msgInput').value = msg;
+        sendMessage();
+      }
+      return;
+    }
+
+    if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    hideTyping();
+    addAIMsg(data.answer, data.tools_used, data.key_numbers);
+
+    if (data.key_numbers) {
+      const kn = {};
+      const n = data.key_numbers;
+      if (n.health_score) kn['Health Score'] = { val: n.health_score.toFixed(0) + '/100', unit: '' };
+      if (n.recommended_sip_inr) kn['Monthly SIP'] = { val: '₹' + fmt(n.recommended_sip_inr), unit: 'recommended' };
+      if (n.predicted_return_pct) kn['Expected Return'] = { val: n.predicted_return_pct.toFixed(1) + '%', unit: 'per annum' };
+      if (n.fire_corpus_inr) kn['FIRE Corpus'] = { val: '₹' + fmtCr(n.fire_corpus_inr), unit: 'needed' };
+      if (n.tax_saving_inr) kn['Tax Saving'] = { val: '₹' + fmt(n.tax_saving_inr), unit: 'recoverable' };
+      if (Object.keys(kn).length) addKeyNumbers(kn);
+    }
+  } catch(e) {
+    hideTyping();
+    addSystemMsg(`Error: ${e.message}`, true);
+  }
+}
+
+// ── Add this new helper function anywhere in your <script> block ──
+async function recreateSession() {
+  try {
+    const body = {
+      age: parseInt(document.getElementById('age').value),
+      monthly_income: parseFloat(document.getElementById('income').value),
+      monthly_expense: parseFloat(document.getElementById('expense').value),
+      retirement_age: parseInt(document.getElementById('retAge').value),
+      risk_profile: document.getElementById('riskProfile').value,
+      city_tier: document.getElementById('city').value,
+      emergency_fund_amount: parseFloat(document.getElementById('efund').value),
+      existing_monthly_sip: parseFloat(document.getElementById('sip').value),
+      section_80c_used: parseFloat(document.getElementById('c80').value),
+      insurance: {
+        has_term_insurance: document.getElementById('hasTerm').checked,
+        term_cover_amount: document.getElementById('hasTerm').checked ? 10000000 : 0,
+        has_health_insurance: document.getElementById('hasHealth').checked,
+        health_cover_amount: document.getElementById('hasHealth').checked ? 500000 : 0
+      },
+      debts: { home_loan_emi: parseFloat(document.getElementById('emi').value) },
+      portfolio: {
+        equity_mf: parseFloat(document.getElementById('eqMf').value),
+        epf: parseFloat(document.getElementById('epf').value)
+      }
+    };
+
+    const res = await fetch(`${API}/sessions`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    sessionId = data.session_id;
+    document.getElementById('sessionIdDisplay').textContent = sessionId;
+    document.getElementById('statusDot').style.background = 'var(--green)';
+    document.getElementById('statusText').textContent = 'Session active';
+    addSystemMsg('Reconnected successfully. Retrying your message...');
+    return true;
+  } catch(e) {
+    addSystemMsg(`Could not reconnect: ${e.message}`, true);
+    return false;
+  }
+}
+
+function sendQuickPrompt(el) {
+  if (!sessionId) {
+    document.getElementById('age').focus();
+    addSystemMsg('Please fill in your profile and click "Start Session" first.', true);
+    return;
+  }
+  const text = el.textContent.trim();
+  document.getElementById('msgInput').value = text;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ── Message renderers ──
+function addUserMsg(text) {
+  hideWelcome();
+  const div = document.createElement('div');
+  div.className = 'msg msg-user';
+  div.innerHTML = `<div class="msg-avatar">U</div><div class="msg-body"><div class="msg-name">You</div><div class="msg-text">${esc(text)}</div></div>`;
+  chatArea().appendChild(div);
+  scroll();
+}
+
+function addAIMsg(text, tools, nums) {
+  hideWelcome();
+  const div = document.createElement('div');
+  div.className = 'msg msg-ai';
+  const toolsHtml = tools && tools.length
+    ? `<div class="tool-chips">${tools.map(t => `<span class="tool-chip">🔧 ${t}</span>`).join('')}</div>` : '';
+  div.innerHTML = `<div class="msg-avatar">FM</div><div class="msg-body"><div class="msg-name">FinMentor AI</div><div class="msg-text">${formatMsg(text)}</div>${toolsHtml}</div>`;
+  chatArea().appendChild(div);
+  scroll();
+}
+
+function addSystemMsg(text, isError = false) {
+  const div = document.createElement('div');
+  div.style.cssText = 'text-align:center;padding:6px 16px';
+  div.innerHTML = `<span style="font-size:12px;color:${isError ? 'var(--red)' : 'var(--text3)'}">${esc(text)}</span>`;
+  chatArea().appendChild(div);
+  scroll();
+}
+
+function addKeyNumbers(kn) {
+  const div = document.createElement('div');
+  div.className = 'key-numbers';
+  div.style.maxWidth = '600px';
+  Object.entries(kn).forEach(([label, {val, unit}]) => {
+    div.innerHTML += `<div class="kn-card"><div class="kn-label">${label}</div><div class="kn-value">${val}</div><div class="kn-unit">${unit}</div></div>`;
+  });
+  chatArea().appendChild(div);
+  scroll();
+}
+
+function showTyping() {
+  isTyping = true;
+  document.getElementById('sendBtn').disabled = true;
+  const div = document.createElement('div');
+  div.className = 'msg msg-ai';
+  div.id = 'typingMsg';
+  div.innerHTML = `<div class="msg-avatar">FM</div><div class="msg-body"><div class="msg-name">FinMentor AI</div><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chatArea().appendChild(div);
+  scroll();
+}
+
+function hideTyping() {
+  isTyping = false;
+  document.getElementById('sendBtn').disabled = false;
+  const t = document.getElementById('typingMsg');
+  if (t) t.remove();
+}
+
+function hideWelcome() {
+  const w = document.getElementById('welcomeCard');
+  if (w) w.remove();
+}
+
+// ── Life Events ──
+function selectEvent(name, el) {
+  document.querySelectorAll('.event-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedEvent = name;
+  const labels = {
+    bonus: ['Bonus Amount (₹)', 'e.g. 300000'],
+    salary_hike: ['Monthly Hike Amount (₹)', 'e.g. 20000'],
+    marriage: ['Spouse Monthly Income (₹, optional)', 'e.g. 80000'],
+    new_baby: ['Extra Monthly Expense (₹, leave 0 for default ₹15k)', 'e.g. 15000'],
+    home_purchase: ['Monthly EMI (₹)', 'e.g. 30000'],
+    inheritance: ['Inheritance Amount (₹)', 'e.g. 2000000'],
+    job_loss: ['Months of Runway Needed', 'e.g. 6'],
+    medical_expense: ['Medical Bill Amount (₹)', 'e.g. 100000']
+  };
+  const titles = {
+    bonus: '💰 Bonus Received', salary_hike: '📈 Salary Hike', marriage: '💍 Getting Married',
+    new_baby: '👶 New Baby', home_purchase: '🏠 Home Purchase',
+    inheritance: '🏛️ Inheritance', job_loss: '⚠️ Job Loss', medical_expense: '🏥 Medical Expense'
+  };
+  const [label, placeholder] = labels[name] || ['Amount (₹)', ''];
+  document.getElementById('amountLabel').textContent = label;
+  document.getElementById('eventAmount').placeholder = placeholder;
+  document.getElementById('eventFormTitle').textContent = titles[name] || name;
+  document.getElementById('eventForm').style.display = 'block';
+  document.getElementById('lifeResult').innerHTML = '';
+}
+
+async function submitLifeEvent() {
+  if (!sessionId) { alert('Please start a session first.'); return; }
+  if (!selectedEvent) { alert('Please select a life event.'); return; }
+
+  const amount = parseFloat(document.getElementById('eventAmount').value) || 0;
+  const msg = document.getElementById('eventMsg').value;
+  const btn = document.querySelector('#eventForm .btn-primary');
+  btn.textContent = '⏳ Getting advice...'; btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/sessions/${sessionId}/life-event`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ event: selectedEvent, amount, description: msg, message: msg || undefined })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    document.getElementById('lifeResult').innerHTML = `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+        <div style="font-size:12px;color:var(--gold);font-weight:600;margin-bottom:10px">✓ Life event applied · Intent: ${data.intent}</div>
+        <div style="font-size:14px;color:var(--text);line-height:1.7">${formatMsg(data.answer)}</div>
+        ${data.tools_used && data.tools_used.length ? `<div class="tool-chips" style="margin-top:12px">${data.tools_used.map(t => `<span class="tool-chip">🔧 ${t}</span>`).join('')}</div>` : ''}
+      </div>`;
+
+    switchTab('chat', document.querySelectorAll('.tab')[0]);
+    addAIMsg(`[Life Event: ${selectedEvent}] ${data.answer}`, data.tools_used, {});
+  } catch(e) {
+    document.getElementById('lifeResult').innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  }
+  btn.textContent = 'Get Advice →'; btn.disabled = false;
+}
+
+// ── Metrics ──
+async function loadMetrics() {
+  document.getElementById('m-status').textContent = 'Loading...';
+  try {
+    const res = await fetch(`${API}/metrics`);
+    if (!res.ok) throw new Error(`${res.status}`);
+    const data = await res.json();
+
+    const grid = document.getElementById('metricsGrid');
+    grid.innerHTML = '';
+
+    const counters = data.counters || [];
+    const histograms = data.histograms || [];
+    const totals = {};
+    counters.forEach(c => { totals[c.name] = (totals[c.name] || 0) + c.value; });
+
+    const display = [
+      { key: 'tool.calls.success', label: 'Tool Calls', icon: '🔧' },
+      { key: 'llm.requests', label: 'LLM Requests', icon: '🧠' },
+      { key: 'executor.turns_completed', label: 'Turns Completed', icon: '✅' },
+      { key: 'memory.episodes_stored', label: 'Episodes Stored', icon: '💾' },
+    ];
+    display.forEach(item => {
+      const val = totals[item.key] || 0;
+      grid.innerHTML += `<div class="metric-card"><div class="metric-label">${item.icon} ${item.label}</div><div class="metric-value">${Math.round(val)}</div></div>`;
+    });
+
+    const latHist = histograms.find(h => h.name === 'llm.latency_ms');
+    if (latHist) {
+      grid.innerHTML += `<div class="metric-card"><div class="metric-label">⚡ LLM Latency (avg)</div><div class="metric-value">${latHist.mean_ms.toFixed(0)}ms</div><div class="metric-sub">p99: ${latHist.p99_ms.toFixed(0)}ms</div></div>`;
+    }
+
+    document.getElementById('m-status').textContent = 'Online ✓';
+    document.getElementById('metricsRaw').style.display = 'block';
+    document.getElementById('metricsRaw').textContent = JSON.stringify(data, null, 2);
+  } catch(e) {
+    document.getElementById('m-status').textContent = `Offline (${e.message})`;
+    document.getElementById('metricsRaw').style.display = 'block';
+    document.getElementById('metricsRaw').textContent = 'Could not reach ' + API + '/metrics\n\nMake sure your server is running:\n  python main.py';
+  }
+}
+
+// ── Helpers ──
+function chatArea() { return document.getElementById('chatArea'); }
+function scroll() { const c = chatArea(); c.scrollTop = c.scrollHeight; }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmt(n) { return Math.round(n).toLocaleString('en-IN'); }
+function fmtCr(n) {
+  if (n >= 10000000) return (n/10000000).toFixed(1) + ' Cr';
+  if (n >= 100000) return (n/100000).toFixed(1) + ' L';
+  return fmt(n);
+}
+function formatMsg(text) {
+  if (!text) return '';
+  return esc(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code style="background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px">$1</code>')
+    .replace(/\n\n/g, '</p><p style="margin-top:8px">')
+    .replace(/\n/g, '<br>')
+    .replace(/^(.+)$/, '<p>$1</p>');
+}
+</script>
+</body>
+</html>
